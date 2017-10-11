@@ -1,0 +1,46 @@
+{
+  "url": "https://api.github.com/repos/rails/rails/issues/30859",
+  "repository_url": "https://api.github.com/repos/rails/rails",
+  "labels_url": "https://api.github.com/repos/rails/rails/issues/30859/labels{/name}",
+  "comments_url": "https://api.github.com/repos/rails/rails/issues/30859/comments",
+  "events_url": "https://api.github.com/repos/rails/rails/issues/30859/events",
+  "html_url": "https://github.com/rails/rails/issues/30859",
+  "id": 264645449,
+  "number": 30859,
+  "title": "Eager loading a scope with a join, results in the join disappearing",
+  "user": {
+    "login": "DarkArc",
+    "id": 778012,
+    "avatar_url": "https://avatars3.githubusercontent.com/u/778012?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/DarkArc",
+    "html_url": "https://github.com/DarkArc",
+    "followers_url": "https://api.github.com/users/DarkArc/followers",
+    "following_url": "https://api.github.com/users/DarkArc/following{/other_user}",
+    "gists_url": "https://api.github.com/users/DarkArc/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/DarkArc/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/DarkArc/subscriptions",
+    "organizations_url": "https://api.github.com/users/DarkArc/orgs",
+    "repos_url": "https://api.github.com/users/DarkArc/repos",
+    "events_url": "https://api.github.com/users/DarkArc/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/DarkArc/received_events",
+    "type": "User",
+    "site_admin": false
+  },
+  "labels": [
+
+  ],
+  "state": "open",
+  "locked": false,
+  "assignee": null,
+  "assignees": [
+
+  ],
+  "milestone": null,
+  "comments": 1,
+  "created_at": "2017-10-11T16:03:39Z",
+  "updated_at": "2017-10-11T16:40:38Z",
+  "closed_at": null,
+  "author_association": "NONE",
+  "body": "### Brief Explanation\r\n\r\nThis is a bug with the includes/eager loading system where join queries defined in scopes disappear causing invalid SQL to be generated.\r\n\r\n#### Model Setup/Example\r\nThingWhichHasEvents\r\n```\r\n    has_many :event_record_links, as: :related_record, inverse_of: :related_record, dependent: :destroy\r\n\r\n    has_many :user_events, -> { user_defined }, through: :event_record_links, source: :event\r\n```\r\n\r\nEventRecordLink\r\n```\r\n    belongs_to :event, touch: true, inverse_of: :event_record_links\r\n    belongs_to :related_record, polymorphic: true\r\n```\r\n\r\nEvent\r\n```\r\n    scope :user_defined, -> { joins(:event_type).where('event_types.user_defined = ?', true) }\r\n```\r\n\r\n### Steps to reproduce\r\n\r\nEager load records of `ThingWhichHasEvents` ex:\r\n\r\n```\r\nThingWhichHasEvents.includes(:user_events).find_each do |thing|\r\n  puts thing.user_events.inspect\r\nend\r\n```\r\nThe same result is observed when using `preload` in place of `includes`.\r\n\r\n### Expected behavior\r\nThe `user_events` should be loaded.\r\n\r\n### Actual behavior\r\nThe request fails:\r\n```\r\nActiveRecord::StatementInvalid: PG::UndefinedTable: ERROR:  missing FROM-clause entry for table \"event_types\"\r\n\r\nSELECT \"event_record_links\".\"related_record_type\" ... FROM \"event_record_links\" LEFT OUTER JOIN \"events\" ON \"events\".\"id\" = \"event_record_links\".\"event_id\" WHERE (event_types.user_defined = 't') AND \"event_record_links\".\"related_record_type\" = $1 AND \"event_record_links\".\"related_record_id\" IN ('bd2edfcd-a7d1-44a0-be50-097c1055a0d9',...)\r\n```\r\nFor some reason, the join needed for the `user_events` scope in `Event` was removed.\r\n\r\n### System configuration\r\n**Rails version**: `5.0.2`\r\n\r\n**Ruby version**: `ruby 2.3.3p222 (2016-11-21) [x86_64-linux-gnu]`\r\n\r\n**Database**:  Postgres 9.5\r\n"
+}
